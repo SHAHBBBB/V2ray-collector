@@ -2,9 +2,8 @@ name: Update V2Ray Configs
 
 on:
   schedule:
-    # هر ۴ ساعت یکبار اجرا میشه
     - cron: '0 */4 * * *'
-  workflow_dispatch: # اجرای دستی
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -17,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -33,6 +34,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git pull --rebase origin main
           git add output/
           git diff --staged --quiet || git commit -m "🔄 Update configs - $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push

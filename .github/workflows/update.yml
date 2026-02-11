@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
 
 jobs:
   collect:
@@ -33,5 +32,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A output/
-          git diff --staged --quiet || git commit -m "🔄 Update configs - $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git diff --staged --quiet || git commit -m "Update configs"
           git push --force

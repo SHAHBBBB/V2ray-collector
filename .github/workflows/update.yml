@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -34,7 +32,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git pull --rebase origin main
-          git add output/
+          git add -A output/
           git diff --staged --quiet || git commit -m "🔄 Update configs - $(date -u +'%Y-%m-%d %H:%M UTC')"
-          git push
+          git push --force

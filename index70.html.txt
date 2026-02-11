@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2Ray Config Collector</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        h1 { color: #00d4ff; margin-bottom: 10px; }
+        .info { color: #888; margin-bottom: 30px; }
+        .link-box {
+            background: #16213e;
+            border: 1px solid #00d4ff33;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+            color: #00d4ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .link-box:hover { background: #1a2744; border-color: #00d4ff66; }
+        .btn {
+            background: #00d4ff;
+            color: #0f0f23;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        .btn:hover { background: #00b8d4; transform: scale(1.05); }
+        .stats {
+            margin-top: 25px;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        label { display: block; text-align: right; margin: 15px 0 5px; color: #aaa; }
+        .copied { color: #4caf50 !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ V2Ray Collector</h1>
+        <p class="info">جمع‌آوری خودکار کانفیگ‌ها - بروزرسانی هر ۴ ساعت</p>
+
+        <label>🔗 لینک سابسکریپشن (Base64):</label>
+        <div class="link-box" id="subLink" onclick="copyLink('sub')">
+            در حال بارگذاری...
+        </div>
+        <button class="btn" onclick="copyLink('sub')">📋 کپی لینک ساب</button>
+
+        <label>📄 لینک کانفیگ‌ها (متن ساده):</label>
+        <div class="link-box" id="rawLink" onclick="copyLink('raw')">
+            در حال بارگذاری...
+        </div>
+        <button class="btn" onclick="copyLink('raw')">📋 کپی لینک متنی</button>
+
+        <div class="stats" id="stats">در حال بارگذاری آمار...</div>
+    </div>
+
+    <script>
+        // آدرس ریپو خودت رو اینجا بذار
+        const REPO = "YOUR_GITHUB_USERNAME/v2ray-collector";
+        const BASE = `https://raw.githubusercontent.com/${REPO}/main/output`;
+
+        const subUrl = `${BASE}/sub.txt`;
+        const rawUrl = `${BASE}/configs.txt`;
+
+        document.getElementById('subLink').textContent = subUrl;
+        document.getElementById('rawLink').textContent = rawUrl;
+
+        // بارگذاری آمار
+        fetch(`${BASE}/info.json`)
+            .then(r => r.json())
+            .then(info => {
+                document.getElementById('stats').innerHTML =
+                    `📊 تعداد کانفیگ: <b>${info.total_configs}</b> | ` +
+                    `📅 آخرین بروزرسانی: <b>${new Date(info.last_update).toLocaleString('fa-IR')}</b> | ` +
+                    `📡 کانال‌های بررسی شده: <b>${info.channels_checked}</b>`;
+            })
+            .catch(() => {
+                document.getElementById('stats').textContent =
+                    'هنوز اطلاعاتی موجود نیست. منتظر اولین اجرا باشید.';
+            });
+
+        function copyLink(type) {
+            const url = type === 'sub' ? subUrl : rawUrl;
+            navigator.clipboard.writeText(url).then(() => {
+                const el = document.getElementById(type === 'sub' ? 'subLink' : 'rawLink');
+                el.classList.add('copied');
+                el.textContent = '✅ کپی شد!';
+                setTimeout(() => {
+                    el.classList.remove('copied');
+                    el.textContent = url;
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

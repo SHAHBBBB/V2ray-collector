@@ -4,6 +4,7 @@ import base64
 import os
 import subprocess
 import sys
+import html
 
 CHANNELS = [
     "XIXVPN",
@@ -23,12 +24,21 @@ def fetch_from_telegram(channel):
         r = requests.get(url, headers=headers, timeout=20)
         if r.status_code == 200:
             text = r.text
+            
+            # Decode HTML entities
+            text = html.unescape(text)
 
-            # مستقیم لینک‌ها داخل HTML
+            # پیدا کردن کانفیگ‌ها با regex بهبود یافته
+            # این pattern تا انتهای line یا تا < و > و space پیش میره
             for protocol in PROTOCOLS:
-                pattern = re.escape(protocol) + r'[A-Za-z0-9+/=@:%._~#?&\-]+'
+                # Pattern جدید که کانفیگ‌های کامل رو می‌گیره
+                pattern = re.escape(protocol) + r'[^\s<>"\'\n]+'
                 found = re.findall(pattern, text)
-                configs.extend(found)
+                
+                for config in found:
+                    # حذف کاراکترهای اضافی از انتها
+                    config = config.rstrip(',;.')
+                    configs.append(config)
 
             # پیدا کردن بلاک‌های base64 و دیکد کردن
             b64_pattern = r'[A-Za-z0-9+/=]{80,}'
@@ -56,12 +66,22 @@ def clean_configs(configs):
 
     for c in configs:
         c = c.strip()
+        
+        # حذف HTML entities اگر باقی مونده
+        c = html.unescape(c)
+        
         if not c:
             continue
         if not any(c.startswith(p) for p in PROTOCOLS):
             continue
         if len(c) < 20:  # لینک‌های خیلی کوتاه معمولاً خرابن
             continue
+            
+        # بررسی اینکه کانفیگ پارامترهای اساسی داره
+        # حداقل باید @ و : داشته باشه
+        if '@' not in c or ':' not in c:
+            continue
+            
         if c in seen:
             continue
         seen.add(c)
@@ -79,11 +99,13 @@ def commit_output():
         subprocess.run(["git", "add", "output/*"], check=True)
         
         # Commit
-        subprocess.run(["git", "commit", "-m", f"Update configs: {len(os.listdir('output'))} files"], check=True)
-        
-        # Push
-        subprocess.run(["git", "push"], check=True)
-        print("✅ Files committed and pushed successfully!")
+        result = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
+        if result.returncode != 0:
+            subprocess.run(["git", "commit", "-m", "Update configs"], check=True)
+            subprocess.run(["git", "push"], check=True)
+            print("✅ Files committed and pushed successfully!")
+        else:
+            print("ℹ️ No changes to commit")
     except subprocess.CalledProcessError as e:
         print(f"❌ Git error: {e}")
         sys.exit(1)
@@ -101,15 +123,16 @@ def main():
     os.makedirs("output", exist_ok=True)
 
     # لیست خام
-    with open("output/sub.txt", "w") as f:
+    with open("output/sub.txt", "w", encoding="utf-8") as f:
         f.write("\n".join(all_configs))
 
     # نسخه base64
     encoded = base64.b64encode("\n".join(all_configs).encode()).decode()
-    with open("output/base64.txt", "w") as f:
+    with open("output/base64.txt", "w", encoding="utf-8") as f:
         f.write(encoded)
 
     print("Files created!")
+    print(f"✅ sub.txt: {len(all_configs)} configs")
 
     # Commit و push
     commit_output()

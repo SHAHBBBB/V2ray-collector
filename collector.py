@@ -9,6 +9,11 @@ import html
 CHANNELS = [
     "XIXVPN",
     "persianvpnhub",
+    "xsfilternet",
+    "irdevs_dns",
+    "YeBeKhe",
+    "cpy_teeL",
+    "makvaslim",
 ]
 
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]

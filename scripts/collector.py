@@ -2,6 +2,8 @@ import requests
 import re
 import base64
 import os
+import subprocess
+import sys
 
 CHANNELS = [
     "XIXVPN",
@@ -29,7 +31,7 @@ def fetch_from_telegram(channel):
                 configs.extend(found)
 
             # پیدا کردن بلاک‌های base64 و دیکد کردن
-            b64_pattern = r'[A-Za-z0-9+/=]{80,}'  # کمی طولانی‌تر تا الکی نخوره
+            b64_pattern = r'[A-Za-z0-9+/=]{80,}'
             b64_blocks = re.findall(b64_pattern, text)
             for block in b64_blocks:
                 try:
@@ -58,8 +60,7 @@ def clean_configs(configs):
             continue
         if not any(c.startswith(p) for p in PROTOCOLS):
             continue
-        # لینک‌های خیلی کوتاه معمولاً خرابن
-        if len(c) < 20:
+        if len(c) < 20:  # لینک‌های خیلی کوتاه معمولاً خرابن
             continue
         if c in seen:
             continue
@@ -67,6 +68,25 @@ def clean_configs(configs):
         cleaned.append(c)
 
     return cleaned
+
+def commit_output():
+    try:
+        # Git config
+        subprocess.run(["git", "config", "user.name", "GitHub Actions"], check=True)
+        subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True)
+        
+        # Add files
+        subprocess.run(["git", "add", "output/*"], check=True)
+        
+        # Commit
+        subprocess.run(["git", "commit", "-m", f"Update configs: {len(os.listdir('output'))} files"], check=True)
+        
+        # Push
+        subprocess.run(["git", "push"], check=True)
+        print("✅ Files committed and pushed successfully!")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Git error: {e}")
+        sys.exit(1)
 
 def main():
     all_configs = []
@@ -84,12 +104,17 @@ def main():
     with open("output/sub.txt", "w") as f:
         f.write("\n".join(all_configs))
 
-    # نسخه base64 برای بعضی کلاینت‌ها
+    # نسخه base64
     encoded = base64.b64encode("\n".join(all_configs).encode()).decode()
     with open("output/base64.txt", "w") as f:
         f.write(encoded)
 
-    print("Done!")
+    print("Files created!")
+
+    # Commit و push
+    commit_output()
+
+    print("Done! Check your repo for updated files.")
 
 if __name__ == "__main__":
     main()

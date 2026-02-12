@@ -16,6 +16,7 @@ CHANNELS = [
     "makvaslim",
     "config_proxy",
     "DuskFall_NFT",
+    "iraniroid",
 ]
 
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]

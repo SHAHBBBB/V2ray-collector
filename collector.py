@@ -7,7 +7,6 @@ import sys
 import html
 import datetime
 
-# لیست کانال‌های مورد نظر شما
 CHANNELS = [
     "XIXVPN",
     "persianvpnhub",
@@ -25,36 +24,22 @@ CHANNELS = [
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]
 
 def normalize_config(config):
-    """
-    کانفیگ را نرمال می‌کند تا تکراری‌های پنهان شناسایی شوند.
-    مثلا: vmess را دیکد می‌کند و فقط آدرس و پورت را می‌گیرد.
-    یا در vless بخش نام (#name) را حذف می‌کند.
-    """
     config = config.strip()
     
-    # پردازش ویژه برای Vmess
     if config.startswith("vmess://"):
         try:
-            # حذف پیشوند و دیکد کردن
             json_str = base64.b64decode(config[8:]).decode('utf-8')
-            
-            # یک روش سریع: پیدا کردن مقادیر کلیدی با regex داخل جیسون
             add_match = re.search(r'"add":"(.*?)"', json_str)
-            port_match = re.search(r'"port":([^,}]+)', json_str) # ممکن است عدد یا رشته باشد
+            port_match = re.search(r'"port":([^,}]+)', json_str)
             id_match = re.search(r'"id":"(.*?)"', json_str)
             
             if add_match and port_match and id_match:
-                # ساخت یک کلید یکتا: vmess://IP:PORT:UUID
                 return f"vmess://{add_match.group(1)}:{port_match.group(1)}:{id_match.group(1)}"
         except:
             pass
             
-    # پردازش برای Vless, Trojan, Hysteria, SS
     elif any(config.startswith(p) for p in ["vless://", "trojan://", "hysteria2://", "hy2://", "tuic://"]):
         try:
-            # این پروتکل‌ها فرمت استانداردی دارند:
-            # protocol://user@host:port?params#name
-            # ما بخش #name (که اسم کانفیگ است و باعث تفاوت می‌شود) را حذف می‌کنیم
             return config.split('#')[0]
         except:
             pass
@@ -74,9 +59,7 @@ def fetch_from_telegram(channel):
             text = r.text
             text = html.unescape(text)
 
-            # 1. استخراج مستقیم لینک‌ها
             for protocol in PROTOCOLS:
-                # Pattern دقیق‌تر برای گرفتن کل کانفیگ
                 pattern = re.escape(protocol) + r'[^\s<>"\'\n]+'
                 found = re.findall(pattern, text)
                 
@@ -84,12 +67,10 @@ def fetch_from_telegram(channel):
                     config = config.rstrip(',;.')
                     configs.append(config)
 
-            # 2. استخراج از بلاک‌های Base64
             b64_pattern = r'[A-Za-z0-9+/=]{80,}'
             b64_blocks = re.findall(b64_pattern, text)
             for block in b64_blocks:
                 try:
-                    # اضافه کردن padding اگر نبود
                     missing_padding = len(block) % 4
                     if missing_padding:
                         block += '=' * (4 - missing_padding)
@@ -102,7 +83,6 @@ def fetch_from_telegram(channel):
                 except Exception:
                     pass
 
-            # حذف تکراری‌های داخل خود کانال
             unique_in_channel = list(set(configs))
             print(f"  Found {len(unique_in_channel)} raw configs from @{channel}")
             return unique_in_channel
@@ -129,14 +109,11 @@ def clean_configs(configs):
         if len(c) < 20:
             continue
             
-        # بررسی حداقل ساختار (وجود @ و :)
         if '@' not in c or ':' not in c:
             continue
             
-        # === مرحله مهم: نرمال‌سازی برای تشخیص تکراری ===
         norm_c = normalize_config(c)
         
-        # اگر نسخه نرمال شده قبلاً دیده شده، پس این کانفیگ تکراری است
         if norm_c in seen:
             continue
             
@@ -153,13 +130,14 @@ def commit_output():
         
         result = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if result.stdout.strip():
-            subprocess.run(["git", "commit", "-m", f"Update configs - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"], check=True)
+            commit_msg = f"Update configs - {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            subprocess.run(["git", "commit", "-m", commit_msg], check=True)
             subprocess.run(["git", "push"], check=True)
-            print("✅ Files committed and pushed successfully!")
+            print("Files committed and pushed successfully!")
         else:
-            print("ℹ️ No changes to commit")
+            print("No changes to commit")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Git error: {e}")
+        print(f"Git error: {e}")
         sys.exit(1)
 
 def main():
@@ -183,7 +161,7 @@ def main():
         f.write(encoded)
 
     print("Files created!")
-    print(f"✅ sub.txt: {len(all_configs)} configs")
+    print(f"sub.txt: {len(all_configs)} configs")
 
     commit_output()
 
@@ -191,4 +169,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```

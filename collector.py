@@ -19,6 +19,7 @@ CHANNELS = [
     "DuskFall_NFT",
     "iraniroid",
     "VlessConfig",
+    "ShadowProxy66",
 ]
 
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]

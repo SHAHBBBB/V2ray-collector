@@ -14,6 +14,7 @@ CHANNELS = [
     "YeBeKhe",
     "cpy_teeL",
     "makvaslim",
+    "config_proxy",
 ]
 
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]

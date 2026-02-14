@@ -23,6 +23,15 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      - name: Create custom subs file from secret (if exists)
+        run: |
+          if [ -n "${{ secrets.CUSTOM_SUBS }}" ]; then
+            echo "${{ secrets.CUSTOM_SUBS }}" > custom_subs.txt
+            echo "custom_subs.txt created from secret."
+          else
+            echo "No CUSTOM_SUBS secret, using existing custom_subs.txt if any."
+          fi
+
       - name: Run collector
         run: python collector.py
 

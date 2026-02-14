@@ -93,6 +93,48 @@ def fetch_from_telegram(channel):
         print(f"  Error for @{channel}: {e}")
     return []
 
+def fetch_from_custom_subs():
+    """خواندن لینک‌های سابسکریپشن دستی از فایل custom_subs.txt و استخراج کانفیگ‌ها"""
+    configs = []
+    subs_file = 'custom_subs.txt'
+    if not os.path.exists(subs_file):
+        return configs
+
+    with open(subs_file, 'r') as f:
+        urls = [line.strip() for line in f if line.strip()]
+
+    print(f"\nFetching from {len(urls)} custom subscription URLs...")
+    for url in urls:
+        try:
+            print(f"  Fetching: {url}")
+            r = requests.get(url, timeout=15)
+            if r.status_code != 200:
+                print(f"    HTTP {r.status_code}")
+                continue
+
+            content = r.text.strip()
+            if not content:
+                continue
+
+            # تلاش برای دیکد base64 (اگر کل محتوا base64 باشد)
+            try:
+                decoded = base64.b64decode(content).decode('utf-8')
+                lines = decoded.splitlines()
+            except:
+                # اگر دیکد نشد، محتوا را خط به خط به عنوان متن ساده در نظر بگیر
+                lines = content.splitlines()
+
+            for line in lines:
+                line = line.strip()
+                if any(line.startswith(p) for p in PROTOCOLS):
+                    configs.append(line)
+
+        except Exception as e:
+            print(f"    Error: {e}")
+
+    print(f"  Total raw configs from custom subs: {len(configs)}")
+    return configs
+
 def clean_configs(configs):
     cleaned = []
     seen = set()
@@ -145,9 +187,14 @@ def main():
     print(f"--- Collector Started at {datetime.datetime.now()} ---")
     all_configs = []
 
+    # دریافت از کانال‌های تلگرام
     for channel in CHANNELS:
         configs = fetch_from_telegram(channel)
         all_configs.extend(configs)
+
+    # دریافت از لینک‌های سابسکریپشن دستی
+    custom_configs = fetch_from_custom_subs()
+    all_configs.extend(custom_configs)
 
     all_configs = clean_configs(all_configs)
     print(f"\nTotal unique cleaned configs: {len(all_configs)}")

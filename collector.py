@@ -8,18 +8,13 @@ import html
 import datetime
 
 CHANNELS = [
-    "XIXVPN",
-    "persianvpnhub",
+    "ShadowProxy66",
     "xsfilternet",
-    "irdevs_dns",
     "YeBeKhe",
+    "irdevs_dns",
     "cpy_teeL",
-    "makvaslim",
     "config_proxy",
     "DuskFall_NFT",
-    "iraniroid",
-    "VlessConfig",
-    "ShadowProxy66",
 ]
 
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]

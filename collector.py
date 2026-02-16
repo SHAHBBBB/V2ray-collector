@@ -125,6 +125,33 @@ def fetch_from_custom_subs():
     print(f"  Total raw configs from custom subs: {len(configs)}")
     return configs
 
+def read_configs_from_folder(folder_path='configs'):
+    """خواندن تمام فایل‌های داخل پوشه configs و استخراج کانفیگ‌ها"""
+    configs = []
+    if not os.path.exists(folder_path):
+        print(f"Folder {folder_path} not found. Skipping.")
+        return configs
+
+    print(f"\nReading configs from folder '{folder_path}'...")
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                file_configs = []
+                for line in lines:
+                    line = line.strip()
+                    if line and any(line.startswith(p) for p in PROTOCOLS):
+                        file_configs.append(line)
+                configs.extend(file_configs)
+                print(f"  Loaded {len(file_configs)} configs from {file_path}")
+            except Exception as e:
+                print(f"  Error reading {file_path}: {e}")
+
+    print(f"  Total raw configs from folder: {len(configs)}")
+    return configs
+
 def clean_configs(configs):
     cleaned = []
     seen = set()
@@ -185,6 +212,10 @@ def main():
     # دریافت از لینک‌های سابسکریپشن دستی
     custom_configs = fetch_from_custom_subs()
     all_configs.extend(custom_configs)
+
+    # دریافت از پوشه configs
+    folder_configs = read_configs_from_folder('configs')
+    all_configs.extend(folder_configs)
 
     all_configs = clean_configs(all_configs)
     print(f"\nTotal unique cleaned configs: {len(all_configs)}")

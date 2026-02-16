@@ -1,3 +1,5 @@
 https://proxyclouds.vercel.app/get
 https://raw.githubusercontent.com/AvenCores/goida-vpn-configs/refs/heads/main/githubmirror/4.txt
 https://raw.githubusercontent.com/MrBihal/Channel-Hddify/refs/heads/main/MeLi-Shekan
+https://openproxylist.com/v2ray/rawlist/text
+https://raw.githubusercontent.com/roosterkid/openproxylist/main/V2RAY_BASE64.txt

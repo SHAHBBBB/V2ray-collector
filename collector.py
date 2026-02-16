@@ -126,7 +126,10 @@ def fetch_from_custom_subs():
     return configs
 
 def read_configs_from_folder(folder_path='configs'):
-    """خواندن تمام فایل‌های داخل پوشه configs و استخراج کانفیگ‌ها"""
+    """
+    خواندن تمام فایل‌های داخل پوشه configs و استخراج کانفیگ‌ها
+    با encoding='utf-8-sig' برای حذف خودکار BOM
+    """
     configs = []
     if not os.path.exists(folder_path):
         print(f"Folder {folder_path} not found. Skipping.")
@@ -137,7 +140,8 @@ def read_configs_from_folder(folder_path='configs'):
         for file in files:
             file_path = os.path.join(root, file)
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                # استفاده از utf-8-sig برای حذف BOM در صورت وجود
+                with open(file_path, 'r', encoding='utf-8-sig') as f:
                     lines = f.readlines()
                 file_configs = []
                 for line in lines:

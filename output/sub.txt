@@ -274,3 +274,5 @@ vless://aec54bed-2384-4b85-8372-432597aa5518@37.120.167.164:443?security=reality
 ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTphaVhPMEZuallIZzZaS0pBUG9oQlZX@185.253.116.95:16673#🇦🇪[openproxylist.com] ss-AE
 vless://88e148ba-1e39-45e9-8aef-6b207411435a@193.163.203.36:18570?encryption=none&security=tls&fp=chrome&insecure=0&allowInsecure=0&type=ws&path=%2F#🇷🇺[openproxylist.com] vless-RU
 vless://6fd9f786-d974-49d0-b5c4-397678de69a2@nld14.freednet.org:443?security=reality&encryption=none&pbk=BhTJ3phnq-Z-10aFKSsj1lzhA8mULR4L6leE4-0WTAs&headerType=none&fp=chrome&spx=%2F&type=tcp&flow=xtls-rprx-vision&sni=www.cybo.com#🇳🇱[openproxylist.com] vless-NL
+vless://21b3c63d-60b2-49ad-f25a-dffea1f536cd@188.114.97.192:443?encryption=none&security=tls&sni=TaMomE.ShOpToShOp1.iR&type=xhttp&host=TaMomE.ShOpToShOp1.iR&path=%2F#🇬🇧
+ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTo3MGM0NTVjOWYxOWFhM2E1@57.129.94.79:11206#%F0%9F%87%A9%F0%9F%87%AA%20Frankfurt%20am%20Main%2C%20HE%2C%20Germany

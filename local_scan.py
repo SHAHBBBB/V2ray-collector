@@ -214,13 +214,21 @@ async def run(args):
         print(f"  ... and {len(alive_results)-25} more alive configs")
     print(f"{'='*72}\n")
 
-    ordered_uris = [uri for r in alive_results for uri in r.uris]
+    # Keep only configs that had a successful speed test
+    speed_results = [r for r in alive_results if r.best_mbps > 0]
+
+    if not speed_results:
+        print("[!] WARNING: No configs with speed data. output/sub.txt unchanged.")
+        sys.exit(0)
+
+    ordered_uris = [uri for r in speed_results for uri in r.uris]
 
     write_outputs(ordered_uris, elapsed, total_input)
 
-    print(f"\n  Total input  : {total_input} configs")
-    print(f"  Alive (kept) : {len(ordered_uris)} configs")
-    print(f"  Dead (removed): {total_input - len(ordered_uris)} configs")
+    print(f"\n  Total input      : {total_input} configs")
+    print(f"  Alive            : {len(alive_results)} configs")
+    print(f"  With speed (kept): {len(ordered_uris)} configs")
+    print(f"  Removed          : {total_input - len(ordered_uris)} configs")
 
 
 def main():

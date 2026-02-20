@@ -1,79 +1,45 @@
-name: Collect & Filter V2Ray Configs
+name: Collect V2Ray Configs
 
 on:
   schedule:
-    # Every 3 hours (same cadence as before)
     - cron: "0 */3 * * *"
-  workflow_dispatch:       # allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 permissions:
-  contents: write          # needed to push output/ changes back to repo
+  contents: write
 
 jobs:
-  collect-and-filter:
+  collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 60    # safety cap — thorough scan can take ~45 min
+    timeout-minutes: 15
 
     steps:
-      # ── 1. Checkout ───────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Setup Python ───────────────────────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # ── 3. Install dependencies ───────────────────────────────────────────
       - name: Install dependencies
         run: pip install requests
 
-      # ── 4. Collect configs from Telegram channels ─────────────────────────
       - name: Collect configs
         run: python collector.py
-        timeout-minutes: 10
 
-      # ── 5. Show collected count ───────────────────────────────────────────
-      - name: Show collected config count
+      - name: Show collected count
         run: |
           if [ -f output/sub.txt ]; then
             COUNT=$(grep -c "://" output/sub.txt 2>/dev/null || echo 0)
             echo "✅ Collected $COUNT configs"
-          else
-            echo "⚠️  output/sub.txt not found after collection"
-            exit 1
           fi
 
-      # ── 6. Filter & rank by latency + speed ──────────────────────────────
-      - name: Filter and rank configs
-        run: |
-          python filter.py \
-            --mode quick \
-            --workers 50 \
-            --speed-workers 8 \
-            --timeout 5 \
-            --speed-timeout 30
-        timeout-minutes: 45
-
-      # ── 7. Show filtered count ────────────────────────────────────────────
-      - name: Show filtered config count
-        run: |
-          if [ -f output/sub.txt ]; then
-            COUNT=$(grep -c "://" output/sub.txt 2>/dev/null || echo 0)
-            echo "✅ Filtered output: $COUNT alive configs"
-            echo "---"
-            echo "Stats:"
-            cat output/stats.json 2>/dev/null || echo "(no stats file)"
-          fi
-
-      # ── 8. Commit & push results ──────────────────────────────────────────
       - name: Commit and push results
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add output/sub.txt output/base64.txt output/stats.json
-          # Only commit if something actually changed
+          git add output/
           git diff --staged --quiet && echo "No changes to commit" || \
-            git commit -m "🔄 Auto-update: collected + filtered configs [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+            git commit -m "🔄 Auto-update configs [$(date -u '+%Y-%m-%d %H:%M UTC')]"
           git push

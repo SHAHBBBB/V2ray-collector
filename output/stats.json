@@ -1,7 +1,7 @@
 {
-  "last_scan": "2026-02-20T08:19:25Z",
+  "last_scan": "2026-02-20T08:59:11Z",
   "scanned_by": "local",
-  "config_count": 14,
-  "total_tested": 22,
-  "elapsed_seconds": 54.6
+  "config_count": 6,
+  "total_tested": 9,
+  "elapsed_seconds": 59.9
 }

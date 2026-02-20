@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
-local_scan.py — اجرای محلی scanner روی کانفیگ‌های جمع‌آوری‌شده
+local_scan.py — Run scanner locally on collected configs
 
-کار این اسکریپت:
-  ① git pull   — آخرین کانفیگ‌ها رو از GitHub می‌گیره
-  ② scanner.py — تست latency + speed روی شبکه‌ی خودت
-  ③ output/    — sub.txt و base64.txt رو با نتایج مرتب‌شده آپدیت می‌کنه
+Steps:
+  1. git pull   — fetch latest configs from GitHub
+  2. scanner.py — test latency + speed on YOUR network
+  3. output/    — update sub.txt and base64.txt with alive configs sorted by score
 
-استفاده:
-  python3 local_scan.py                   # حالت پیش‌فرض (quick)
-  python3 local_scan.py --mode normal     # دقیق‌تر، کندتر
-  python3 local_scan.py --skip-download   # فقط پینگ (سریع‌ترین)
-  python3 local_scan.py --no-pull         # بدون git pull
+Usage:
+  python3 local_scan.py                   # default (quick mode)
+  python3 local_scan.py --mode normal     # more thorough, slower
+  python3 local_scan.py --skip-download   # ping only (fastest)
+  python3 local_scan.py --no-pull         # skip git pull
 """
 
 import argparse
@@ -50,7 +50,7 @@ def _fmt(secs: float) -> str:
 
 
 def git_pull():
-    print("[*] git pull ...")
+    print("[*] Running git pull ...")
     try:
         result = subprocess.run(
             ["git", "pull", "--rebase"],
@@ -84,25 +84,25 @@ def write_outputs(uris: list, elapsed: float, total_input: int):
         f.write(encoded + "\n")
 
     stats = {
-        "last_scan":        time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "scanned_by":       "local",
-        "config_count":     len(uris),
-        "total_tested":     total_input,
-        "elapsed_seconds":  round(elapsed, 1),
+        "last_scan":       time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "scanned_by":      "local",
+        "config_count":    len(uris),
+        "total_tested":    total_input,
+        "elapsed_seconds": round(elapsed, 1),
     }
     with open(OUT_STATS, "w", encoding="utf-8") as f:
         json.dump(stats, f, indent=2, ensure_ascii=False)
 
-    print(f"\n[✓] {len(uris)} کانفیگ زنده → output/sub.txt")
-    print(f"[✓] output/base64.txt")
-    print(f"[✓] output/stats.json")
+    print(f"\n[OK] {len(uris)} alive configs saved -> output/sub.txt")
+    print(f"[OK] output/base64.txt updated")
+    print(f"[OK] output/stats.json updated")
 
 
 async def run(args):
-    # ── بارگذاری ──────────────────────────────────────────────────────────────
-    print(f"\n[*] بارگذاری کانفیگ از {INPUT_FILE} ...")
+    # Load
+    print(f"\n[*] Loading configs from {INPUT_FILE} ...")
     if not os.path.isfile(INPUT_FILE):
-        print(f"[!] فایل پیدا نشد: {INPUT_FILE}")
+        print(f"[!] File not found: {INPUT_FILE}")
         sys.exit(1)
 
     st = State()
@@ -113,30 +113,30 @@ async def run(args):
 
     st.configs = load_input(INPUT_FILE)
     total_input = len(st.configs)
-    print(f"[*] {total_input} کانفیگ بارگذاری شد")
+    print(f"[*] Loaded {total_input} configs")
 
     if not st.configs:
-        print("[!] هیچ کانفیگی پیدا نشد.")
+        print("[!] No configs found. Exiting.")
         sys.exit(0)
 
-    # ── DNS ───────────────────────────────────────────────────────────────────
-    print(f"[*] DNS Resolve ...")
+    # DNS
+    print(f"[*] Resolving DNS ...")
     await resolve_all(st)
-    print(f"[*] {len(st.ips)} IP یکتا برای تست")
+    print(f"[*] {len(st.ips)} unique IPs to test")
 
     if not st.ips:
-        print("[!] هیچ IP‌ای resolve نشد.")
+        print("[!] No IPs resolved. Exiting.")
         sys.exit(0)
 
-    # ── اسکن ─────────────────────────────────────────────────────────────────
+    # Scan
     mode_desc = {
-        "quick":    "سریع   (~2-3 دقیقه)",
-        "normal":   "معمولی (~5-10 دقیقه)",
-        "thorough": "کامل   (~20-45 دقیقه)",
+        "quick":    "(~2-3 min)",
+        "normal":   "(~5-10 min)",
+        "thorough": "(~20-45 min)",
     }
-    print(f"[*] شروع اسکن — حالت: {args.mode} {mode_desc.get(args.mode, '')}")
+    print(f"[*] Starting scan — mode: {args.mode} {mode_desc.get(args.mode, '')}")
     if args.skip_download:
-        print("[*] فقط تست پینگ (بدون تست سرعت)")
+        print("[*] Ping only — no download speed test")
     print()
 
     start = time.monotonic()
@@ -147,21 +147,17 @@ async def run(args):
     )
 
     old_sigint = signal.getsignal(signal.SIGINT)
-    interrupted = False
 
     def _sig(sig, frame):
-        nonlocal interrupted
-        interrupted = True
         st.interrupted = True
         st.finished = True
         scan_task.cancel()
-        print("\n\n[!] متوقف شد — ذخیره‌ی نتایج جزئی ...")
+        print("\n\n[!] Interrupted — saving partial results ...")
 
     signal.signal(signal.SIGINT, _sig)
 
-    # Progress bar ساده
     async def _progress():
-        spin = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+        spin = "|/-\\"
         i = 0
         while not st.finished and not st.interrupted:
             phase   = st.phase_label or st.phase or "..."
@@ -173,7 +169,7 @@ async def run(args):
             sp = spin[i % len(spin)]
             print(
                 f"\r  {sp} [{elapsed}] {phase:<30} "
-                f"{done}/{total} ({pct:>3}%)  زنده={alive}   ",
+                f"{done}/{total} ({pct:>3}%)  alive={alive}   ",
                 end="", flush=True
             )
             i += 1
@@ -196,46 +192,49 @@ async def run(args):
 
     signal.signal(signal.SIGINT, old_sigint)
     elapsed = time.monotonic() - start
-    print(f"\n\n[✓] اسکن تموم شد — {_fmt(elapsed)} | زنده: {st.alive_n}/{len(st.ips)}")
+    print(f"\n\n[OK] Scan complete — {_fmt(elapsed)} | alive: {st.alive_n}/{len(st.ips)}")
 
-    # ── جمع‌آوری نتایج ────────────────────────────────────────────────────────
+    # Results
     alive_results = sorted_alive(st, "score")
 
     if not alive_results:
-        print("[!] هیچ کانفیگ زنده‌ای پیدا نشد. فایل‌ها تغییر نمی‌کنند.")
+        print("[!] WARNING: No alive configs found. output/sub.txt unchanged.")
         sys.exit(0)
 
-    # ── نمایش جدول ───────────────────────────────────────────────────────────
-    print(f"\n{'═'*72}")
+    print(f"\n{'='*72}")
     print(f"  {'#':>3}  {'IP':<16}  {'Ping':>7}  {'Speed':>9}  {'Score':>6}  {'Colo':>4}")
     print(f"  {'─'*3}  {'─'*16}  {'─'*7}  {'─'*9}  {'─'*6}  {'─'*4}")
     for rank, r in enumerate(alive_results[:25], 1):
-        lat  = f"{r.tls_ms:>5.0f}ms"  if r.tls_ms   > 0 else "     - "
+        lat  = f"{r.tls_ms:>5.0f}ms"      if r.tls_ms   > 0 else "      - "
         spd  = f"{r.best_mbps:>7.2f}MB/s" if r.best_mbps > 0 else "        -"
-        sc   = f"{r.score:>6.1f}"     if r.score    > 0 else "     -"
+        sc   = f"{r.score:>6.1f}"         if r.score    > 0 else "     -"
         colo = r.colo or "  -"
         print(f"  {rank:>3}  {r.ip:<16}  {lat}  {spd}  {sc}  {colo:>4}")
     if len(alive_results) > 25:
-        print(f"  ... و {len(alive_results)-25} کانفیگ زنده‌ی دیگه")
-    print(f"{'═'*72}\n")
+        print(f"  ... and {len(alive_results)-25} more alive configs")
+    print(f"{'='*72}\n")
 
-    # ── ذخیره ─────────────────────────────────────────────────────────────────
     ordered_uris = [uri for r in alive_results for uri in r.uris]
+
     write_outputs(ordered_uris, elapsed, total_input)
+
+    print(f"\n  Total input  : {total_input} configs")
+    print(f"  Alive (kept) : {len(ordered_uris)} configs")
+    print(f"  Dead (removed): {total_input - len(ordered_uris)} configs")
 
 
 def main():
     p = argparse.ArgumentParser(
-        description="اسکن محلی کانفیگ‌های V2Ray روی شبکه‌ی خودت"
+        description="Scan V2Ray configs locally on your own network"
     )
     p.add_argument("--mode", "-m",
                    choices=["quick", "normal", "thorough"],
                    default="quick",
-                   help="حالت اسکن (پیش‌فرض: quick)")
+                   help="Scan mode (default: quick)")
     p.add_argument("--skip-download", action="store_true",
-                   help="فقط تست پینگ بدون تست سرعت دانلود")
+                   help="Ping only — no download speed test")
     p.add_argument("--no-pull", action="store_true",
-                   help="بدون git pull")
+                   help="Skip git pull")
     p.add_argument("--workers",       type=int,   default=LATENCY_WORKERS)
     p.add_argument("--speed-workers", type=int,   default=SPEED_WORKERS)
     p.add_argument("--timeout",       type=float, default=LATENCY_TIMEOUT)
@@ -252,7 +251,7 @@ def main():
     try:
         asyncio.run(run(args))
     except KeyboardInterrupt:
-        print("\n[!] خروج.")
+        print("\n[!] Exiting.")
 
 
 if __name__ == "__main__":

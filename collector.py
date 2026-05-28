@@ -10,6 +10,9 @@ import datetime
 CHANNELS = [
     "ShadowProxy66",
     "xsfilternet",
+    "archivetell",
+    "IR_NETLIFY_GAP",
+    "",
 ]
 
 PROTOCOLS = ["vmess://", "vless://", "trojan://", "ss://", "ssr://", "hysteria2://", "hy2://", "tuic://"]
